@@ -58,25 +58,33 @@ const Scene = {
 			return;
 		}
 
-		if (vars.animPercent <= 0.20) {
+		if (vars.animPercent <= 0.33) {
 			Scene.vars.doorGroup.children[0].traverse(node => {
 				if (node.isMesh) {
 					if (node.name == "Circle002") {
-						node.rotation.y = 45 + (75 * vars.animPercent);
+						node.rotation.y = 0 + (-3 * vars.animPercent);
 					}
 				}
 			});
-		}
+		} 
 
-		if (vars.animPercent >= 0.20 && vars.animPercent <=1) {
-			Scene.vars.doorGroup.children[0].traverse(node => {
-				if (node.isMesh) {
-					if (node.name == "Plane001") {
-						node.rotation.x = 45 + (75 * vars.animPercent);
-					}
-				}
-			});
-		}
+		// if (vars.animPercent >= 0.20 && vars.animPercent <=0.75) {
+		// 	Scene.vars.doorGroup.children[0].traverse(node => {
+		// 		if (node.isMesh) {
+		// 			if (node.name == "Plane001") {
+		// 				node.rotation.z = 0 + (10 * vars.animPercent);
+		// 			}
+		// 		}
+		// 	});
+		// } else if (vars.animPercent < 0.20) {
+		// 	Scene.vars.doorGroup.children[0].traverse(node => {
+		// 		if (node.isMesh) {
+		// 			if (node.name == "Plane001") {
+		// 				node.rotation.z = -(0 + (10 * vars.animPercent));
+		// 			}
+		// 		}
+		// 	});
+		// }
 	},
 	loadFBX: (file, scale, position, rotation, color, namespace, callback) => {
 		let vars = Scene.vars;
