@@ -12,9 +12,11 @@ const Scene = {
 		stats: null,
 		controls: null,
 		texture: null,
+		sound: null,
 		mouse: new THREE.Vector2(),
 		raycaster: new THREE.Raycaster(),
 		animSpeed: null,
+		doorOpened: false,
 		animPercent: 0.00,
 		text: "DAWIN",
 		wall_inside: []
@@ -25,11 +27,23 @@ const Scene = {
 
 		Scene.customAnimation();
 
-		if (Scene.vars.doorGroup !== undefined) {
-			let intersects = Scene.vars.raycaster.intersectObjects(Scene.vars.doorGroup.children, true);
-			if (intersects.length > 0) {
+		if (Scene.vars.doorGroup !== undefined && Scene.vars.door2Group !== undefined && Scene.vars.door3Group !== undefined) {
+
+			let intersects1 = Scene.vars.raycaster.intersectObjects(Scene.vars.doorGroup.children, true);
+			let intersects2 = Scene.vars.raycaster.intersectObjects(Scene.vars.door2Group.children, true);
+			let intersects3 = Scene.vars.raycaster.intersectObjects(Scene.vars.door3Group.children, true);
+
+			if (intersects1.length > 0) {
+				Scene.intersectDoor(Scene.vars.doorGroup);
+				Scene.vars.animSpeed = 0.05;
+			} else if (intersects2.length > 0) {
+				Scene.intersectDoor(Scene.vars.door2Group);
+				Scene.vars.animSpeed = 0.05;
+			} else if (intersects3.length > 0) {
+				Scene.intersectDoor(Scene.vars.door3Group);
 				Scene.vars.animSpeed = 0.05;
 			} else {
+				
 				Scene.vars.animSpeed = -0.05;
 			}
 		}
@@ -58,33 +72,17 @@ const Scene = {
 			return;
 		}
 
-		if (vars.animPercent <= 0.33) {
-			Scene.vars.doorGroup.children[0].traverse(node => {
-				if (node.isMesh) {
-					if (node.name == "Circle002") {
-						node.rotation.y = 0 + (-3 * vars.animPercent);
+	},
+	intersectDoor: (group) => {
+		group.children[0].traverse(node => {
+			if (node.isMesh) {
+				if (node.name == "Circle002") {
+					if(node.rotation.y > -0.75) {
+						node.rotation.y = -3 * Scene.vars.animPercent;
 					}
 				}
-			});
-		} 
-
-		// if (vars.animPercent >= 0.20 && vars.animPercent <=0.75) {
-		// 	Scene.vars.doorGroup.children[0].traverse(node => {
-		// 		if (node.isMesh) {
-		// 			if (node.name == "Plane001") {
-		// 				node.rotation.z = 0 + (10 * vars.animPercent);
-		// 			}
-		// 		}
-		// 	});
-		// } else if (vars.animPercent < 0.20) {
-		// 	Scene.vars.doorGroup.children[0].traverse(node => {
-		// 		if (node.isMesh) {
-		// 			if (node.name == "Plane001") {
-		// 				node.rotation.z = -(0 + (10 * vars.animPercent));
-		// 			}
-		// 		}
-		// 	});
-		// }
+			}
+		});
 	},
 	loadFBX: (file, scale, position, rotation, color, namespace, callback) => {
 		let vars = Scene.vars;
@@ -177,6 +175,55 @@ const Scene = {
 	onMouseMove: (event) => {
 		Scene.vars.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
 		Scene.vars.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+	},
+	onMouseDown: (event) => {
+		Scene.vars.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+		Scene.vars.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+		var listener = new THREE.AudioListener();
+		Scene.vars.camera.add(listener);
+
+		var sound = new THREE.Audio(listener);
+		var audioLoader = new THREE.AudioLoader();
+
+		Scene.vars.raycaster.setFromCamera(Scene.vars.mouse, Scene.vars.camera);
+
+		if (Scene.vars.doorGroup !== undefined) {
+			let intersects = Scene.vars.raycaster.intersectObjects(Scene.vars.doorGroup.children, true);
+			if (intersects.length > 0) {
+				if (!Scene.vars.doorOpened) {
+					Scene.vars.doorGroup.children[0].traverse(node => {
+						if (node.isMesh) {
+							if (node.name == "Plane001") {
+								node.rotation.z = 30;
+							}
+						}
+					});
+					audioLoader.load('sound/open_door_3.mp3', function (buffer) {
+						sound.setBuffer(buffer);
+						sound.setVolume(0.5);
+						sound.play();
+					});
+					Scene.vars.doorOpened = true;
+				} else {
+					Scene.vars.doorGroup.children[0].traverse(node => {
+						if (node.isMesh) {
+							if (node.name == "Plane001") {
+								node.rotation.z = 0;
+							}
+						}
+					});
+					audioLoader.load('sound/close_door_1.mp3', function (buffer) {
+						sound.setBuffer(buffer);
+						sound.setVolume(0.7);
+						sound.play();
+					});
+					Scene.vars.doorOpened = false;
+				}
+			}
+		}
+
+		Scene.render();
 	},
 	init: () => {
 		let vars = Scene.vars;
@@ -290,7 +337,6 @@ const Scene = {
 		let sphere = new THREE.Mesh(geometry, material);
 		vars.scene.add(sphere);
 
-
 		let hash = document.location.hash.substr(1);
 		if (hash.length !== 0) {
 			let text = hash.substring();
@@ -306,102 +352,54 @@ const Scene = {
 					console.log(node);
 					if (node.name == "Plane002") {
 						node.scale.set(9, 9, 9);
+						node.castShadow = true;
+						node.receiveShadow = true;
 					}
-					node.castShadow = true;
-					node.receiveShadow = true;
 				}
 			});
 
 			vars.scene.add(door);
-
 			vars.doorGroup = door;
+
+			let door2 = door.clone();
+			door2.position.set(-200, 0, 0);
+
+			vars.scene.add(door2);
+			vars.door2Group = door2;
+
+			let door3 = door.clone();
+			door3.position.set(200, 0, 0);
+
+			vars.scene.add(door3);
+			vars.door3Group = door3;
 
 			let elem = document.querySelector('#loading');
 			elem.parentNode.removeChild(elem);
 		});
 
 		var wall_inside = {
-			width: 500,
+			width: 600,
 			height: 200,
 			depth: 10
 		}
 		var wall_geo = new THREE.CubeGeometry(wall_inside.width, wall_inside.height, wall_inside.depth);
-		
 
-		let material2 = new THREE.MeshLambertMaterial({
-			color: 0x808080
+		var txt_wall = new THREE.TextureLoader().load('texture/wall.jpg', function(txt_wall) {
+			txt_wall.wrapS = txt_wall.wrapT = THREE.RepeatWrapping;
+			txt_wall.offset.set( 0, 0 );
+			txt_wall.repeat.set( 1, 1 );
 		});
+		let material2 = new THREE.MeshLambertMaterial({
+			map: txt_wall
+		});
+
 		let mesh2 = new THREE.Mesh(wall_geo, material2);
 		vars.scene.add(mesh2);
 
+		mesh2.castShadow = true;
+
 		mesh2.position.x = 0;
 		mesh2.position.y = 100;
-
-		// Scene.loadFBX("Logo_Feelity.FBX", 10, [45, 22, 0], [0, 0, 0], 0xFFFFFF, 'logo', () => {
-		// 	Scene.loadFBX("Statuette.FBX", 10, [0, 0, 0], [0, 0, 0], 0xFFD700, 'statuette', () => {
-		// 		Scene.loadFBX("Socle_Partie1.FBX", 10, [0, 0, 0], [0, 0, 0], 0x1A1A1A, 'socle1', () => {
-		// 			Scene.loadFBX("Socle_Partie2.FBX", 10, [0, 0, 0], [0, 0, 0], 0x1A1A1A, 'socle2', () => {
-		// 				Scene.loadFBX("Plaquette.FBX", 10, [0, 4, 45], [0, 0, 0], 0xFFFFFF, 'plaquette', () => {
-		// 					Scene.loadText(Scene.vars.text, 10, [0, 23, 52], [0, 0, 0], 0x1A1A1A, "texte", () => {
-
-		// 						let vars = Scene.vars;
-
-		// 						let gold = new THREE.Group();
-		// 						gold.add(vars.socle1);
-		// 						gold.add(vars.socle2);
-		// 						gold.add(vars.statuette);
-		// 						gold.add(vars.logo);
-		// 						gold.add(vars.texte);
-		// 						gold.add(vars.plaquette);
-
-		// 						let logo2 = vars.logo.clone();
-		// 						logo2.rotation.z = Math.PI;
-		// 						logo2.position.x = -45;
-		// 						vars.logo2 = logo2;
-		// 						gold.add(logo2);
-		// 						gold.position.z = -50;
-		// 						gold.position.y = 10;
-		// 						vars.scene.add(gold);
-		// 						vars.goldGroup = gold;
-
-		// 						let silver = gold.clone();
-		// 						silver.position.set(-200, 10, 0);
-		// 						silver.rotation.y = Math.PI / 4;
-		// 						silver.children[2].traverse(node => {
-		// 							if (node.isMesh) {
-		// 								node.material = new THREE.MeshStandardMaterial({
-		// 									color: new THREE.Color(0xC0C0C0),
-		// 									metalness: .6,
-		// 									roughness: .3
-		// 								})
-		// 							}
-		// 						});
-		// 						vars.scene.add(silver);
-		// 						vars.silverGroup = silver;
-
-		// 						let bronze = gold.clone();
-		// 						bronze.position.set(200, 10, 0);
-		// 						bronze.rotation.y = -Math.PI / 4;
-		// 						bronze.children[2].traverse(node => {
-		// 							if (node.isMesh) {
-		// 								node.material = new THREE.MeshStandardMaterial({
-		// 									color: new THREE.Color(0xCD7F32),
-		// 									metalness: .6,
-		// 									roughness: .3
-		// 								})
-		// 							}
-		// 						});
-		// 						vars.scene.add(bronze);
-		// 						vars.bronzeGroup = bronze;
-
-		// 						let elem = document.querySelector('#loading');
-		// 						elem.parentNode.removeChild(elem);
-		// 					});
-		// 				});
-		// 			});
-		// 		});
-		// 	});
-		// });
 
 		// ajout des controles
 		vars.controls = new OrbitControls(vars.camera, vars.renderer.domElement);
@@ -416,6 +414,7 @@ const Scene = {
 
 		window.addEventListener('resize', Scene.onWindowResize, false);
 		window.addEventListener('mousemove', Scene.onMouseMove, false);
+		window.addEventListener('mousedown', Scene.onMouseDown, false);
 
 		vars.stats = new Stats();
 		vars.container.appendChild(vars.stats.dom);
