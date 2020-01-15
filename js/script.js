@@ -19,7 +19,9 @@ const Scene = {
 		doorOpened: false,
 		animPercent: 0.00,
 		text: "DAWIN",
-		wall_inside: []
+		wall_inside: [],
+		currentGroup : null,
+		clickedGroup: null
 	},
 	animate: () => {
 		requestAnimationFrame(Scene.animate);
@@ -34,16 +36,15 @@ const Scene = {
 			let intersects3 = Scene.vars.raycaster.intersectObjects(Scene.vars.door3Group.children, true);
 
 			if (intersects1.length > 0) {
-				Scene.intersectDoor(Scene.vars.doorGroup);
+				Scene.vars.currentGroup = Scene.vars.doorGroup;
 				Scene.vars.animSpeed = 0.05;
 			} else if (intersects2.length > 0) {
-				Scene.intersectDoor(Scene.vars.door2Group);
+				Scene.vars.currentGroup = Scene.vars.door2Group;
 				Scene.vars.animSpeed = 0.05;
 			} else if (intersects3.length > 0) {
-				Scene.intersectDoor(Scene.vars.door3Group);
+				Scene.vars.currentGroup = Scene.vars.door3Group;
 				Scene.vars.animSpeed = 0.05;
 			} else {
-				
 				Scene.vars.animSpeed = -0.05;
 			}
 		}
@@ -72,17 +73,55 @@ const Scene = {
 			return;
 		}
 
+		if (vars.animPercent <= 0.33) {
+			Scene.animateHandle(Scene.vars.currentGroup, vars.animPercent);
+		} else if (vars.animPercent >= 0.33) {
+			Scene.animateHandle(Scene.vars.doorGroup, vars.animPercent);
+		}
 	},
-	intersectDoor: (group) => {
+	animateHandle: (group, percent) => {
 		group.children[0].traverse(node => {
 			if (node.isMesh) {
 				if (node.name == "Circle002") {
-					if(node.rotation.y > -0.75) {
-						node.rotation.y = -3 * Scene.vars.animPercent;
+					if (percent <= 0.33) {
+						node.rotation.y = -2 * percent;
+					} else {
+						node.rotation.y = 0;
 					}
 				}
 			}
 		});
+	},
+	animateDoor: (group) => {
+		if(!Scene.vars.doorOpened) {
+			group.children[0].traverse(node => {
+				if (node.isMesh) {
+					if (node.name == "Plane001") {
+						node.rotation.z = 30;
+					}
+				}
+			});
+			// audioLoader.load('sound/bernard.mp3', function (buffer) {
+			// 	sound.setBuffer(buffer);
+			// 	sound.setVolume(0.5);
+			// 	sound.play();
+			// });
+			Scene.vars.doorOpened = true;
+		} else {
+			group.children[0].traverse(node => {
+				if (node.isMesh) {
+					if (node.name == "Plane001") {
+						node.rotation.z = 0;
+					}
+				}
+			});
+			// audioLoader.load('sound/close_door_1.mp3', function (buffer) {
+			// 	sound.setBuffer(buffer);
+			// 	sound.setVolume(0.7);
+			// 	sound.play();
+			// });
+			Scene.vars.doorOpened = false;
+		}
 	},
 	loadFBX: (file, scale, position, rotation, color, namespace, callback) => {
 		let vars = Scene.vars;
@@ -189,37 +228,20 @@ const Scene = {
 		Scene.vars.raycaster.setFromCamera(Scene.vars.mouse, Scene.vars.camera);
 
 		if (Scene.vars.doorGroup !== undefined) {
-			let intersects = Scene.vars.raycaster.intersectObjects(Scene.vars.doorGroup.children, true);
-			if (intersects.length > 0) {
-				if (!Scene.vars.doorOpened) {
-					Scene.vars.doorGroup.children[0].traverse(node => {
-						if (node.isMesh) {
-							if (node.name == "Plane001") {
-								node.rotation.z = 30;
-							}
-						}
-					});
-					audioLoader.load('sound/open_door_3.mp3', function (buffer) {
-						sound.setBuffer(buffer);
-						sound.setVolume(0.5);
-						sound.play();
-					});
-					Scene.vars.doorOpened = true;
-				} else {
-					Scene.vars.doorGroup.children[0].traverse(node => {
-						if (node.isMesh) {
-							if (node.name == "Plane001") {
-								node.rotation.z = 0;
-							}
-						}
-					});
-					audioLoader.load('sound/close_door_1.mp3', function (buffer) {
-						sound.setBuffer(buffer);
-						sound.setVolume(0.7);
-						sound.play();
-					});
-					Scene.vars.doorOpened = false;
-				}
+
+			let intersects1 = Scene.vars.raycaster.intersectObjects(Scene.vars.doorGroup.children, true);
+			let intersects2 = Scene.vars.raycaster.intersectObjects(Scene.vars.door2Group.children, true);
+			let intersects3 = Scene.vars.raycaster.intersectObjects(Scene.vars.door3Group.children, true);
+
+			if (intersects1.length > 0) {
+				Scene.vars.clickedGroup = Scene.vars.doorGroup;
+				Scene.animateDoor(Scene.vars.clickedGroup);
+			} else if (intersects2.length > 0) {
+				Scene.vars.clickedGroup = Scene.vars.door2Group;
+				Scene.animateDoor(Scene.vars.clickedGroup);
+			} else if (intersects3.length > 0) {
+				Scene.vars.clickedGroup = Scene.vars.door3Group;
+				Scene.animateDoor(Scene.vars.clickedGroup);
 			}
 		}
 
@@ -386,8 +408,6 @@ const Scene = {
 
 		var txt_wall = new THREE.TextureLoader().load('texture/wall.jpg', function(txt_wall) {
 			txt_wall.wrapS = txt_wall.wrapT = THREE.RepeatWrapping;
-			txt_wall.offset.set( 0, 0 );
-			txt_wall.repeat.set( 1, 1 );
 		});
 		let material2 = new THREE.MeshLambertMaterial({
 			map: txt_wall
