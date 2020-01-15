@@ -21,7 +21,9 @@ const Scene = {
 		text: "DAWIN",
 		wall_inside: [],
 		currentGroup : null,
-		clickedGroup: null
+		clickedGroup: null,
+		listener: null,
+		sounds: []
 	},
 	animate: () => {
 		requestAnimationFrame(Scene.animate);
@@ -101,11 +103,13 @@ const Scene = {
 					}
 				}
 			});
-			// audioLoader.load('sound/bernard.mp3', function (buffer) {
-			// 	sound.setBuffer(buffer);
-			// 	sound.setVolume(0.5);
-			// 	sound.play();
-			// });
+			if (group == Scene.vars.doorGroup) {
+				Scene.vars.sounds[2].play();
+			} else if (group == Scene.vars.door2Group) {
+				Scene.vars.sounds[3].play();
+			} else if (group == Scene.vars.door3Group) {
+				Scene.vars.sounds[4].play();
+			}
 			Scene.vars.doorOpened = true;
 		} else {
 			group.children[0].traverse(node => {
@@ -115,16 +119,29 @@ const Scene = {
 					}
 				}
 			});
-			// audioLoader.load('sound/close_door_1.mp3', function (buffer) {
-			// 	sound.setBuffer(buffer);
-			// 	sound.setVolume(0.7);
-			// 	sound.play();
-			// });
+			if (group == Scene.vars.doorGroup) {
+				Scene.vars.sounds[2].stop();
+			} else if (group == Scene.vars.door2Group) {
+				Scene.vars.sounds[3].stop();
+			} else if (group == Scene.vars.door3Group) {
+				Scene.vars.sounds[4].stop();
+			}
 			Scene.vars.doorOpened = false;
 		}
 	},
+	loadMP3: (file,callback) => {
+		var sound = new THREE.Audio(Scene.vars.listener);
+
+		var audioLoader = new THREE.AudioLoader();
+		audioLoader.load(file, function (buffer) {
+			sound.setBuffer(buffer);
+			sound.setVolume(0.7);
+
+			Scene.vars.sounds.push(sound);
+			callback();
+		});
+	},
 	loadFBX: (file, scale, position, rotation, color, namespace, callback) => {
-		let vars = Scene.vars;
 		let loader = new FBXLoader();
 
 		if (file === undefined) {
@@ -164,47 +181,6 @@ const Scene = {
 		});
 
 	},
-	loadText: (text, scale, position, rotation, color, namespace, callback) => {
-		let loader = new THREE.FontLoader();
-
-		if (text === undefined || text === "") {
-			return;
-		}
-
-		loader.load('./vendor/three.js-master/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-			let geometry = new THREE.TextGeometry(text, {
-				font,
-				size: 1,
-				height: 0.1,
-				curveSegments: 1,
-				bevelEnabled: false
-			});
-
-			geometry.computeBoundingBox();
-			let offset = geometry.boundingBox.getCenter().negate();
-			geometry.translate(offset.x, offset.y, offset.z);
-
-			let material = new THREE.MeshBasicMaterial({
-				color: new THREE.Color(color)
-			});
-
-			let mesh = new THREE.Mesh(geometry, material);
-
-			mesh.position.x = position[0];
-			mesh.position.y = position[1];
-			mesh.position.z = position[2];
-
-			mesh.rotation.x = rotation[0];
-			mesh.rotation.y = rotation[1];
-			mesh.rotation.z = rotation[2];
-
-			mesh.scale.x = mesh.scale.y = mesh.scale.z = scale;
-
-			Scene.vars[namespace] = mesh;
-
-			callback();
-		});
-	},
 	onWindowResize: () => {
 		let vars = Scene.vars;
 		vars.camera.aspect = window.innerWidth / window.innerHeight;
@@ -218,12 +194,6 @@ const Scene = {
 	onMouseDown: (event) => {
 		Scene.vars.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
 		Scene.vars.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-		var listener = new THREE.AudioListener();
-		Scene.vars.camera.add(listener);
-
-		var sound = new THREE.Audio(listener);
-		var audioLoader = new THREE.AudioLoader();
 
 		Scene.vars.raycaster.setFromCamera(Scene.vars.mouse, Scene.vars.camera);
 
@@ -346,13 +316,9 @@ const Scene = {
 
 		vars.scene.add(shadowPlane);
 
-		// ajout de la texture helper du sol
-		// let grid = new THREE.GridHelper(2000, 20, 0x000000, 0x000000);
-		// grid.material.opacity = 0.2;
-		// grid.material.transparent = true;
-		// vars.scene.add(grid);
+		Scene.vars.listener = new THREE.AudioListener();
+		Scene.vars.camera.add(Scene.vars.listener);
 
-		// ajout de la sphère
 		let geometry = new THREE.SphereGeometry(1000, 32, 32);
 		let material = new THREE.MeshPhongMaterial({ color: new THREE.Color(0xFFFFFF) });
 		material.side = THREE.DoubleSide;
@@ -366,37 +332,45 @@ const Scene = {
 		}
 
 		Scene.loadFBX("door.fbx", 10, [0, 0, 0], [0, 0, 0], 0xFFFFFF, 'door', () => {
-			let vars = Scene.vars;
-			let door = new THREE.Group();
-			door.add(vars.door);
-			door.children[0].traverse(node => {
-				if (node.isMesh) {
-					console.log(node);
-					if (node.name == "Plane002") {
-						node.scale.set(9, 9, 9);
-						node.castShadow = true;
-						node.receiveShadow = true;
-					}
-				}
+			Scene.loadMP3("sound/open_door_3.mp3", () => {
+				Scene.loadMP3("sound/close_door_1.mp3", () => {
+					Scene.loadMP3("sound/bernard.mp3", () => {
+						Scene.loadMP3("sound/respect.mp3", () => {
+							Scene.loadMP3("sound/foudroyer.mp3", () => {
+								let vars = Scene.vars;
+								let door = new THREE.Group();
+								door.add(vars.door);
+								door.children[0].traverse(node => {
+									if (node.isMesh) {
+										console.log(node);
+										if (node.name == "Plane002") {
+											node.scale.set(9, 9, 9);
+										}
+									}
+								});
+					
+								vars.scene.add(door);
+								vars.doorGroup = door;
+					
+								let door2 = door.clone();
+								door2.position.set(-200, 0, 0);
+					
+								vars.scene.add(door2);
+								vars.door2Group = door2;
+					
+								let door3 = door.clone();
+								door3.position.set(200, 0, 0);
+					
+								vars.scene.add(door3);
+								vars.door3Group = door3;
+					
+								let elem = document.querySelector('#loading');
+								elem.parentNode.removeChild(elem);
+							});
+						});
+					});
+				});
 			});
-
-			vars.scene.add(door);
-			vars.doorGroup = door;
-
-			let door2 = door.clone();
-			door2.position.set(-200, 0, 0);
-
-			vars.scene.add(door2);
-			vars.door2Group = door2;
-
-			let door3 = door.clone();
-			door3.position.set(200, 0, 0);
-
-			vars.scene.add(door3);
-			vars.door3Group = door3;
-
-			let elem = document.querySelector('#loading');
-			elem.parentNode.removeChild(elem);
 		});
 
 		var wall_inside = {
