@@ -2,6 +2,7 @@ import * as THREE from '../vendor/three.js-master/build/three.module.js';
 import Stats from '../vendor/three.js-master/examples/jsm/libs/stats.module.js';
 import { OrbitControls } from '../vendor/three.js-master/examples/jsm/controls/OrbitControls.js';
 import { FBXLoader } from '../vendor/three.js-master/examples/jsm/loaders/FBXLoader.js';
+import * as CSG from '../js/ThreeCSG.js';
 
 const Scene = {
 	vars: {
@@ -99,7 +100,7 @@ const Scene = {
 			group.children[0].traverse(node => {
 				if (node.isMesh) {
 					if (node.name == "Plane001") {
-						node.rotation.z = 30;
+						node.rotation.z = 23;
 					}
 				}
 			});
@@ -152,9 +153,6 @@ const Scene = {
 
 			object.traverse((child) => {
 				if (child.isMesh) {
-
-					child.castShadow = true;
-					child.receiveShadow = true;
 
 					if (namespace === "door") {
 						child.material = new THREE.MeshBasicMaterial({
@@ -373,27 +371,81 @@ const Scene = {
 			});
 		});
 
+		// var txt_wall = new THREE.TextureLoader().load('texture/wall.jpg', function(txt_wall) {
+		// 	txt_wall.wrapS = txt_wall.wrapT = THREE.RepeatWrapping;
+		// // });
+		// let material2 = new THREE.MeshLambertMaterial({
+		// 	map: txt_wall
+		// });
+
+		// let mesh2 = new THREE.Mesh(geometryWall, material2);
+		
+
+		// mesh2.castShadow = true;
+
+		// mesh2.position.x = 0;
+		// mesh2.position.y = 10;
+
+		var img1 = new THREE.CubeGeometry(80,185,10);
+		var img1txt = new THREE.TextureLoader().load('imgs/respect.png');
+		let material_1 = new THREE.MeshLambertMaterial({
+			map: img1txt
+		});
+
+		var img2 = new THREE.CubeGeometry(80,185,10);
+		var img2txt = new THREE.TextureLoader().load('imgs/bernard.jpg');
+		let material_2 = new THREE.MeshLambertMaterial({
+			map: img2txt
+		});
+
+		var img3 = new THREE.CubeGeometry(80,185,10);
+		var img3txt = new THREE.TextureLoader().load('imgs/diego.png');
+		let material_3 = new THREE.MeshLambertMaterial({
+			map: img3txt
+		});
+
+		let mesh_1 = new THREE.Mesh(img1, material_1);
+		let mesh_2 = new THREE.Mesh(img2, material_2);
+		let mesh_3 = new THREE.Mesh(img3, material_3);
+		vars.scene.add(mesh_1);
+		vars.scene.add(mesh_2);
+		vars.scene.add(mesh_3);
+
 		var wall_inside = {
 			width: 600,
 			height: 200,
 			depth: 10
 		}
 		var wall_geo = new THREE.CubeGeometry(wall_inside.width, wall_inside.height, wall_inside.depth);
+		// var wallBSP = new ThreeBSP(wall_geo);
+		// const imgBPS1 = new ThreeBSP(mesh_1);
+		// const imgBPS2 = new ThreeBSP(mesh_2);
+		// const imgBPS3 = new ThreeBSP(mesh_3);
 
-		var txt_wall = new THREE.TextureLoader().load('texture/wall.jpg', function(txt_wall) {
-			txt_wall.wrapS = txt_wall.wrapT = THREE.RepeatWrapping;
+		// var subtract_wall_bsp = wallBSP.subtract(imgBPS1);
+		// subtract_wall_bsp.subtract(imgBPS2);
+		// subtract_wall_bsp.subtract(imgBPS3);
+		var mat_door = new THREE.MeshLambertMaterial({
+			map: new THREE.TextureLoader().load('texture/wall.jpg')
 		});
-		let material2 = new THREE.MeshLambertMaterial({
-			map: txt_wall
-		});
 
-		let mesh2 = new THREE.Mesh(wall_geo, material2);
-		vars.scene.add(mesh2);
+		var mesh_door = new THREE.Mesh(wall_geo,mat_door);
+		vars.scene.add(mesh_door);
 
-		mesh2.castShadow = true;
+		mesh_door.castShadow = true;
+		mesh_door.receiveShadow = true;
 
-		mesh2.position.x = 0;
-		mesh2.position.y = 100;
+		mesh_door.position.y = 100;
+		mesh_1.position.x = -200;
+		mesh_1.position.y= 90;
+		mesh_1.position.z= 2;
+		mesh_2.position.x = 0;
+		mesh_2.position.y= 90;
+		mesh_2.position.z= 2;
+		mesh_3.position.x= 200;
+		mesh_3.position.y= 90;
+		mesh_3.position.z= 2;
+
 
 		// ajout des controles
 		vars.controls = new OrbitControls(vars.camera, vars.renderer.domElement);
