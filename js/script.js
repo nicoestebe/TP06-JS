@@ -26,6 +26,7 @@ const Scene = {
 		listener: null,
 		sounds: []
 	},
+	// gestion de l'animation
 	animate: () => {
 		requestAnimationFrame(Scene.animate);
 		Scene.vars.raycaster.setFromCamera(Scene.vars.mouse, Scene.vars.camera);
@@ -58,6 +59,7 @@ const Scene = {
 		Scene.vars.renderer.render(Scene.vars.scene, Scene.vars.camera);
 		Scene.vars.stats.update();
 	},
+	// animation des portes
 	customAnimation: () => {
 		let vars = Scene.vars;
 
@@ -82,6 +84,7 @@ const Scene = {
 			Scene.animateHandle(Scene.vars.doorGroup, vars.animPercent);
 		}
 	},
+	// méthode permettant d'animer les poignées de porte
 	animateHandle: (group, percent) => {
 		group.children[0].traverse(node => {
 			if (node.isMesh) {
@@ -95,6 +98,7 @@ const Scene = {
 			}
 		});
 	},
+	// méthode permettant d'animer les portes
 	animateDoor: (group) => {
 		if(!Scene.vars.doorOpened) {
 			group.children[0].traverse(node => {
@@ -130,6 +134,7 @@ const Scene = {
 			Scene.vars.doorOpened = false;
 		}
 	},
+	// chargement d'un fichier MP3
 	loadMP3: (file,callback) => {
 		var sound = new THREE.Audio(Scene.vars.listener);
 
@@ -142,6 +147,7 @@ const Scene = {
 			callback();
 		});
 	},
+	// chargement d'un fichier FBX
 	loadFBX: (file, scale, position, rotation, color, namespace, callback) => {
 		let loader = new FBXLoader();
 
@@ -189,6 +195,7 @@ const Scene = {
 		Scene.vars.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
 		Scene.vars.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 	},
+	// gestion du click sur une porte
 	onMouseDown: (event) => {
 		Scene.vars.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
 		Scene.vars.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -314,6 +321,7 @@ const Scene = {
 
 		vars.scene.add(shadowPlane);
 
+		// ajout du listener d'audio
 		Scene.vars.listener = new THREE.AudioListener();
 		Scene.vars.camera.add(Scene.vars.listener);
 
@@ -329,6 +337,7 @@ const Scene = {
 			Scene.vars.text = decodeURI(text);
 		}
 
+		// chargement des portes et des sons
 		Scene.loadFBX("door.fbx", 10, [0, 0, 0], [0, 0, 0], 0xFFFFFF, 'door', () => {
 			Scene.loadMP3("sound/open_door_3.mp3", () => {
 				Scene.loadMP3("sound/close_door_1.mp3", () => {
@@ -386,6 +395,7 @@ const Scene = {
 		// mesh2.position.x = 0;
 		// mesh2.position.y = 10;
 
+		// créations des images cachées derrière les portes
 		var img1 = new THREE.CubeGeometry(80,185,10);
 		var img1txt = new THREE.TextureLoader().load('imgs/respect.png');
 		let material_1 = new THREE.MeshLambertMaterial({
@@ -411,6 +421,7 @@ const Scene = {
 		vars.scene.add(mesh_2);
 		vars.scene.add(mesh_3);
 
+		// création du mur
 		var wall_inside = {
 			width: 600,
 			height: 200,
