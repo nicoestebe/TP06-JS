@@ -16,4 +16,4 @@ La scène reprend le code du professeur. J'ai enlevé les statuettes pour y mett
 Les portes cachent ainsi une photo avec un son associé.
 
 ## Remerciements
-Je souhaite M.Labaste pour ses cours de qualité. C'était plaisir de travailler dans de bonnes conditions, avec de la bonne humeur !
+Je remercie Denis pour ses cours de qualité. C'était plaisir de travailler dans de bonnes conditions, avec de la bonne humeur !
